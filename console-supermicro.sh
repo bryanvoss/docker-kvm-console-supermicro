@@ -34,8 +34,8 @@ _console_supermicro() {
 
 	sleep 2
 
-	local port=$( docker port $id | sed 's,.*:,,' )
-	local url="http://localhost:${port}/vnc.html?host=localhost&port=${port}&autoconnect=true&password=no-password"
+	local port=$( docker port $id 8080 | sed 's,.*:,,' )
+	local url="http://localhost:${port}/vnc.html?host=localhost&port=${port}&autoconnect=true&password=no-password&logging=debug"
 	echo ${url} | sed 's,.,-,g'
 	echo ${url}
 	echo ${url} | sed 's,.,-,g'
