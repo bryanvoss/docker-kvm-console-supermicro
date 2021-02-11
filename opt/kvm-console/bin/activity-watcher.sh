@@ -8,30 +8,52 @@ _activity_watcher_main() {
 
 	if [ -f "${LOG_FILE}" ] ; then
 		local idle_count=$( grep -c "${EXPRESSION}" "${LOG_FILE}" ) || return ${?}
-		if [ "0" = "${idle_count}" ] ; then
-			_activity_watcher_out "novnc is running"
-		else
-			_activity_watcher_out "novnc idled out."
-			status=${idle_count}
-		fi
+		_activity_watcher_out "idle:${idle_count},"
+		let status=${status}+${idle_count}
 	else
-		_activity_watcher_out "novnc log to watch"
+		_activity_watcher_out "idle:.,"
 	fi
 
-	# may need see uptime or check the log...
-	local java_count=$( ps -ef | grep -v grep | grep -c 'java ' )
-	if [ "0" = "${java_count}" ] ; then
-		_activity_watcher_out "java is not running"
-		let status=${status}+1000
-	else
-		_activity_watcher_out "java is running...."
-	fi
+	_activity_watcher_processes
+	let status=${status}+${?}
 
 	return ${status}
 }
 
+_activity_watcher_processes() {
+	ps -ef | awk -v CLOAKED=1 '
+		BEGIN {
+			n = split( "java novnc vnc wsy", tmp );
+			for ( i = 1 ; i <= n ; i++ ) {
+				REQUIRED[ tmp[ i ] ] = 0;
+			}
+		}
+		
+		/CLOAKED/ {next}
+
+		{ for (i=1;i<8;i++) $i = ""; sub(/^[ \t]*/,""); }
+
+		$2 ~ /launch.sh/   { $1 = "novnc" }
+		$3 == "websockify" { $1 = "wsy" }
+		$1 == "x11vnc"     { $1 = "vnc" }
+		$1 in REQUIRED { REQUIRED[$1]++ }
+
+		END {
+			missing = 0;
+			for ( x in REQUIRED ) {
+				found = REQUIRED[ x ];
+				if ( !found ) missing++;
+				printf( "%s:%d,", x, found );
+			}
+
+			printf( "ms:%d", missing );
+			exit( missing );
+		}
+	'
+}
+
 _activity_watcher_out() {
-	echo -n "${*} ; "
+	echo -n "${*}"
 }
 
 _activity_watcher_main ${*}

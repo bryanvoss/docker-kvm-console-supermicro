@@ -31,7 +31,7 @@ _novnc_tls() {
 		--cert /tmp/combined.pem \
 		--key /private-key.key \
 		--ssl-only \
-		--web ${DIRECTORY}
+		--web ${DIRECTORY} \
 		--idle-timeout ${VNC_TIMEOUT}
 }
 

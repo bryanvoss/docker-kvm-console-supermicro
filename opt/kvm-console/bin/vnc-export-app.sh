@@ -14,6 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+# TODO: kill this thing...
+for((i=0;i<1;i--)) ; do
+sleep 33
+done
+
 first_time=1
 for((i=0;i<1;i--)) ; do
     read winid width height < <(xwininfo -root -tree \
@@ -33,11 +39,14 @@ for((i=0;i<1;i--)) ; do
     [ "$width" -eq "$actual_width" ] && [ "$height" -eq "$actual_height" ] && \
         sleep 1 && continue
 
-	echo "${width} == ${actual_width} and ${height} == ${actual_height}"
-	echo "clip to ${X11VNC_CLIP}"
+	echo "sizing: ${width} == ${actual_width} and ${height} == ${actual_height}"
+	echo "clip to ${X11VNC_CLIP}, and size is ${width} x ${height}"
 
-    xdotool windowfocus $winid windowsize $winid $width $height
-    x11vnc -remote "clip:$X11VNC_CLIP" --sync
+	clip=${width}x${height}+${X11VNC_CLIP}
+
+	xdotool windowfocus $winid windowsize $winid $width $height
+	x11vnc -remote "clip:${clip}" --sync
+	#x11vnc -remote "clip:$X11VNC_CLIP" --sync
     x11vnc -remote "id:$winid" --sync
 
 	echo "hide the splash screen"

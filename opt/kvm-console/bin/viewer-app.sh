@@ -36,27 +36,49 @@ set -e
 set -o pipefail
 
 # Download jnlp
+echo Download jnlp
+
 mkdir -p "workspace-${ip_address}"
 cd "workspace-${ip_address}"
 jnlp_url="${proto}://${ip_address}/cgi/url_redirect.cgi?url_name=ikvm&url_type=jwsk"
-curl -s --insecure "${jnlp_url}" -H 'Referer: http://localhost' -H "Cookie: ${session_id}" > launch.jnlp
+curl -s --insecure "${jnlp_url}" -H 'Referer: http://localhost' -H "Cookie: ${session_id}" > launch.jnlp || exit 2
 
 # Download resource
+echo Download resource
+
 codebase_url=$(xmlstarlet sel -t -v '/jnlp/@codebase' launch.jnlp)
 jars="$(xmlstarlet sel -t -v 'concat(//*/jar/@href, //*/jar/@version)' launch.jnlp | sed 's/.jar\(..*\)$/__V\1.jar/g')"
 query='@os="'"$(uname | sed 's/Darwin/Mac OS X/')"'" and @arch="'"$(uname -m)"'"'
 libs="$(xmlstarlet sel -t -v 'concat(//*/resources['"$query"']/nativelib/@href, //*/nativelib[position()]/@version)' launch.jnlp | sed 's/.jar\(..*\)$/__V\1.jar/g')"
 
 for resource in $jars $libs; do
-    [ -f $resource ] || curl --insecure -L -H 'Referer: http://localhost' -H "Cookie: ${session_id}" "${codebase_url}/${resource}.pack.gz" | unpack200 - $resource
+	url="${codebase_url}/${resource}.pack.gz"
+	if [ -f ${resource} ] ; then
+		echo already downloaded ${resource}: $( ls -l ${resource} )
+	else
+		tmp_file="viewer-app.tmp"
+		echo downloading $resource from ${url}
+		curl --insecure -L -H 'Referer: http://localhost' -H "Cookie: ${session_id}" ${url} > ${tmp_file} || exit 3
+		echo 
+		ls -l ${tmp_file}
+		echo unpack
+		unpack200 ${tmp_file} $resource || return 
+		echo unpacked
+		
+	fi
+    #[ -f $resource ] || curl --insecure -L -H 'Referer: http://localhost' -H "Cookie: ${session_id}" "${codebase_url}/${resource}.pack.gz" | unpack200 - $resource
 done
 
 # Extract libraries
+echo Extract libraries
+
 for lib in $libs; do
-    unzip -o $lib > /dev/null
+    unzip -o $lib > /dev/null || exit 4
 done
 
 # Start application
+echo Start application
+
 java_vm_args=$(xmlstarlet sel -t -v '//*/j2se/@java-vm-args' launch.jnlp || true)
 main_class=$(xmlstarlet sel -t -v '//*/application-desc/@main-class' launch.jnlp)
 arguments=$(xmlstarlet sel -t -v '//*/application-desc/argument' launch.jnlp)

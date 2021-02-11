@@ -14,33 +14,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-splash_width=1
-splash_height=1
+export DISPLAY=:1
 
-read screen_width screen_height < <(xdotool getdisplaygeometry)
+_vnc_server() {
+	# Disable the screen saver
+	xset s off s reset
+	
+	local clip=${X11VNC_CLIP-1024x768+0+21}
+	read width height x y < <(echo ${clip} | sed 's,[^0-9], ,g')
 
-[ "${SPLASH_IMAGE-}" ] && \
-    read splash_width splash_height < <(\
-        xview -identify $SPLASH_IMAGE | \
-        sed 's/.* \([0-9]*\)x\([0-9]*\) .*/\1 \2/g')
+	local winid=""
+	for ((i=0;i<1;i--)) ; do 
+		winid=$( xwininfo -root -tree | awk '/Java iKVM Viewer/ { print $1 }' )
+		if [ "" != "${winid}" ] ; then
+			echo "the iKVM window id is ${winid}"
+			break
+		fi
+		echo "waiting on the iKVM window"
+		sleep 1
+	done
 
-[ "${SPLASH_SIZE-}" ] && \
-    read splash_width splash_height < <(echo $SPLASH_SIZE | tr 'x' ' ')
+	echo DISPLAY=:1 xdotool windowmove $winid 0 0 windowfocus $winid windowsize $winid $width $height 
+	xdotool \
+		windowmove $winid 0 0 \
+		windowfocus $winid \
+		windowsize $winid $width $height \
+	|| echo "error moving the window"
 
-clip_x=$((screen_width/2-splash_width/2))
-clip_y=$((screen_height/2-splash_height/2))
-splash_clip=${splash_width}x${splash_height}+${clip_x}+${clip_y}
+	x11vnc -storepasswd ${VNC_PASSWORD} /tmp/vnc-password.txt
 
-/opt/kvm-console/bin/splash-show.sh
+	_run_novnc 2>&1 | tee -a /tmp/novnc.txt &
 
-# Disable the screen saver
-xset s off s reset
+	echo "the clip as ${clip}"
+
+	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt -ncache 10 --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip $clip
+}
 
 _run_novnc() {
-	sleep 3
-	supervisorctl start novnc
-}
-_run_novnc 2>&1 | tee -a /tmp/novnc.txt &
+	for ((i=0;i<1;i--)) ; do
+		if [ 0 != $( netstat -tln | grep -wc 5900 ) ] ; then
+			echo "vnc server is ready"
+			break;
+		fi
+		echo "vnc server is not ready"
+		sleep 1
+	done
 
-x11vnc -storepasswd ${VNC_PASSWORD} /tmp/vnc-password.txt
-exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt -ncache 10 --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip $splash_clip
+	echo starting novnc
+	supervisorctl start novnc
+
+	sleep 1 
+	ps -ef | grep -v grep | egrep '(websockify|novnc)'
+}
+
+_vnc_server

@@ -19,7 +19,7 @@ ENV HOME /root
 
 RUN apt-get update && apt-get install -yyq --no-install-recommends \
     supervisor x11vnc xvfb xdotool x11-utils curl unzip openjdk-8-jre \
-    x11-xserver-utils xmlstarlet iptables xloadimage git python3-pip \
+    x11-xserver-utils xmlstarlet iptables xloadimage git python3-pip net-tools \
 	&& pip3 install numpy \
     && apt-get autoclean && apt-get autoremove && rm -rf /var/lib/apt/lists/* \
 	|| exit ${?}
@@ -33,7 +33,7 @@ RUN tar xfz /opt/kvm-console/noVNC.tgz -C /opt/kvm-console
 ENV CONSOLE_TTL "3600"
 
 # X11VNC_CLIP: The area of the application to show
-ENV X11VNC_CLIP "4096x4096+0+21"
+ENV X11VNC_CLIP "1024x768+0+21"
 # Desktop title shown by X11VNC
 ENV X11VNC_TITLE ""
 # Image to show until we get the application working
