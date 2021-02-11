@@ -47,7 +47,10 @@ _vnc_server() {
 
 	echo "the clip as ${clip}"
 
-	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt -ncache 10 --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip $clip
+	local cache="-ncache 10"
+	#cache="-noncache"
+
+	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt ${cache} --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip $clip
 }
 
 _run_novnc() {
