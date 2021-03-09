@@ -10,7 +10,7 @@ export VNC_TIMEOUT=${INACTIVITY_TIMEOUT-1800}
 _novnc_main() {
 	cd ${DIRECTORY} || return {?}
 
-	if [ -f /certificate.pem ] ; then 
+	if [ -d /certificates ] ; then
 		echo certificate found, starting securely
 		_novnc_tls
 	else
@@ -24,12 +24,12 @@ _novnc_basic() {
 }
 
 _novnc_tls() {
-	cat /certificate.pem /certificate-authority.pem > /tmp/combined.pem
+	cat /certificates/cert.pem /certificates/fullchain.pem > /tmp/combined.pem
 	${COMMAND} \
 		--listen ${LISTEN_PORT} \
 		--vnc ${VNC_URI} \
 		--cert /tmp/combined.pem \
-		--key /private-key.key \
+		--key /certificates/privkey.pem \
 		--ssl-only \
 		--web ${DIRECTORY} \
 		--idle-timeout ${VNC_TIMEOUT}
