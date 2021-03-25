@@ -14,21 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export NAME="internap/ipmi-novnc-console"
+
 _console_supermicro() {
+	docker build -t ${NAME} $(dirname ${0}) || return ${?}
+
 	if [ 0 = ${#} ] || [ 3 -lt ${#} ] ; then
 		echo 'usage: console-supermicro.sh <host> [username] [password]'
 		return 
 	fi
-	docker build -t internap/kvm-console-supermicro $(dirname ${0}) || return ${?}
 
-	id=$(docker run -P -d \
-	-e IPMI_ADDRESS=${1} \
-	-e IPMI_USERNAME=${2-ADMIN} \
-	-e IPMI_PASSWORD=${3-ADMIN} \
-	internap/kvm-console-supermicro)
+	id=$(docker run -P -d -e IPMI_ADDRESS=${1} -e IPMI_USERNAME=${2-ADMIN} -e IPMI_PASSWORD=${3-ADMIN} ${NAME})
 	if [ "" = "${id}" ] ; then
 		echo could not get containter id:
-		docker ps | grep internap/kvm-console-supermicro
+		docker ps | grep ${NAME}
 		return 1
 	fi
 
@@ -40,7 +39,7 @@ _console_supermicro() {
 	echo ${url}
 	echo ${url} | sed 's,.,-,g'
 
-	echo hit enter to end me
+	echo hit enter to stop the container
 	read
 
 	docker rm --force ${id}
