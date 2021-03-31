@@ -24,7 +24,8 @@ _novnc_basic() {
 }
 
 _novnc_tls() {
-	cat /certificates/cert.pem /certificates/fullchain.pem > /tmp/combined.pem
+	awk 1 /certificates/cert.pem /certificates/fullchain.pem > /tmp/combined.pem
+
 	${COMMAND} \
 		--listen ${LISTEN_PORT} \
 		--vnc ${VNC_URI} \
