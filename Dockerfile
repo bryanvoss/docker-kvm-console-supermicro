@@ -32,6 +32,8 @@ RUN tar xfz /opt/kvm-console/noVNC.tgz -C /opt/kvm-console
 # The delay (in seconds) between connections before the container is terminated
 ENV CONSOLE_TTL "3600"
 
+# Cache setting for x11vnc
+ENV X11VNC_CACHE "-ncache 10"
 # X11VNC_CLIP: The area of the application to show
 ENV X11VNC_CLIP "1024x768+0+21"
 # Desktop title shown by X11VNC

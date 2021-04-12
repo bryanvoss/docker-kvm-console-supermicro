@@ -43,14 +43,30 @@ _vnc_server() {
 
 	x11vnc -storepasswd ${VNC_PASSWORD} /tmp/vnc-password.txt
 
+	_run_clipster ${winid} ${clip} | tee -a /var/log/supervisor/clipster.log &
 	_run_novnc 2>&1 | tee -a /tmp/novnc.txt &
 
-	echo "the clip as ${clip}"
+	local cache="${X11VNC_CACHE}"
 
-	local cache="-ncache 10"
-	#cache="-noncache"
+	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt ${cache} --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip ${clip}
+}
 
-	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt ${cache} --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip $clip
+_run_clipster() {
+	local winid=${1} ; shift 
+	local clip=${1} ; shift 
+
+	while true ; do 
+		local consoleSize=$( xdotool getwindowgeometry ${winid} | awk '/Geometry:/{print $NF}' )
+		local nuClip=${consoleSize}+$( echo ${clip} | cut -f2- -d+ )
+		if [ "${nuClip}" = "${clip}" ] ; then
+			echo "the clip is still ${clip}" >/dev/null
+		else
+			clip=${nuClip}
+			echo "the clip is now ${clip}"
+			x11vnc -rfbauth /tmp/vnc-password.txt -remote "clip:${clip} " --sync
+		fi
+		sleep 1
+	done
 }
 
 _run_novnc() {
