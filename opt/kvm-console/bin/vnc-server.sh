@@ -58,6 +58,8 @@ _run_clipster() {
 	local xoff=$( echo ${clip} | cut -f2 -d+ )
 	local yoff=$( echo ${clip} | cut -f3 -d+ )
 
+	export DISPLAY=:1
+
 	while true ; do 
 		local consoleSize=$( xdotool getwindowgeometry ${winid} | awk '/Geometry:/{print $NF}' )
 		local w=$( echo ${consoleSize} | cut -f1 -dx )
@@ -73,6 +75,7 @@ _run_clipster() {
 			clip=${nuClip}
 			echo "the clip is now ${clip}"
 			x11vnc -rfbauth /tmp/vnc-password.txt -remote "clip:${clip} " --sync
+			x11vnc -remote "id:$winid" --sync
 			local status=${?}
 			if [ 0 = ${status} ] ; then
 				echo "clipped to ${clip}: ${status}"
