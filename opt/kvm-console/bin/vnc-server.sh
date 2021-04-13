@@ -66,7 +66,7 @@ _run_clipster() {
 		let ho=${h}-${yoff}
 		local nuClip="${wo}x${ho}+${xoff}+${yoff}"
 
-		#echo "${clip} vs ${consoleSize} vs ${nuClip}"
+		echo "${clip} vs ${nuClip} from ${consoleSize} and ${xoff},${yoff}"
 		if [ "${nuClip}" = "${clip}" ] ; then
 			echo "the clip is still ${clip}" >/dev/null
 		else
