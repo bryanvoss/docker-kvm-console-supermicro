@@ -42,48 +42,13 @@ _vnc_server() {
 	|| echo "error moving the window"
 
 	x11vnc -storepasswd ${VNC_PASSWORD} /tmp/vnc-password.txt
+	supervisorctl start clipster
 
-	_run_clipster ${winid} ${clip} | tee -a /var/log/supervisor/clipster.log &
 	_run_novnc 2>&1 | tee -a /tmp/novnc.txt &
 
 	local cache="${X11VNC_CACHE}"
 
 	exec x11vnc -rfbport 5900 -rfbauth /tmp/vnc-password.txt ${cache} --xkb -shared -forever -desktop "${X11VNC_TITLE-}" -clip ${clip}
-}
-
-_run_clipster() {
-	local winid=${1} ; shift 
-	local clip=${1} ; shift 
-
-	local xoff=$( echo ${clip} | cut -f2 -d+ )
-	local yoff=$( echo ${clip} | cut -f3 -d+ )
-
-	echo "clipster: winid is ${winid} and clip is ${clip}"
-
-	for ((i=0;i<1;i--)) ; do
-		local consoleSize=$( xdotool getwindowgeometry ${winid} | awk '/Geometry:/{print $NF}' )
-		local w=$( echo ${consoleSize} | cut -f1 -dx )
-		local h=$( echo ${consoleSize} | cut -f2 -dx )
-		let wo=${w}-${xoff}
-		let ho=${h}-${yoff}
-		local nuClip="${wo}x${ho}+${xoff}+${yoff}"
-
-		#echo "${clip} vs ${nuClip} from ${consoleSize} and ${xoff},${yoff}"
-		if [ "${nuClip}" = "${clip}" ] ; then
-			echo "the clip is still ${clip}" >/dev/null
-		else
-			clip=${nuClip}
-			echo "the clip is now ${clip}"
-			x11vnc -rfbauth /tmp/vnc-password.txt -remote "clip:${clip}" --sync
-			local status=${?}
-			if [ 0 = ${status} ] ; then
-				echo "clipped to ${clip}: ${status}"
-			else
-				echo "could not clip to ${clip}: ${status}"
-			fi
-		fi
-		sleep 1
-	done
 }
 
 _run_novnc() {
