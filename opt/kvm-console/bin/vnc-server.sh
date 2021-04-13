@@ -60,7 +60,7 @@ _run_clipster() {
 
 	echo "clipster: winid is ${winid} and clip is ${clip}"
 
-	while true ; do 
+	for ((i=0;i<1;i--)) ; do
 		local consoleSize=$( xdotool getwindowgeometry ${winid} | awk '/Geometry:/{print $NF}' )
 		local w=$( echo ${consoleSize} | cut -f1 -dx )
 		local h=$( echo ${consoleSize} | cut -f2 -dx )
