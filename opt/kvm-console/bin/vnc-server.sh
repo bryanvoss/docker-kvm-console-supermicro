@@ -55,9 +55,18 @@ _run_clipster() {
 	local winid=${1} ; shift 
 	local clip=${1} ; shift 
 
+	local xoff=$( echo ${clip} | cut -f2 -d+ )
+	local yoff=$( echo ${clip} | cut -f3 -d+ )
+
 	while true ; do 
 		local consoleSize=$( xdotool getwindowgeometry ${winid} | awk '/Geometry:/{print $NF}' )
-		local nuClip=${consoleSize}+$( echo ${clip} | cut -f2- -d+ )
+		local w=$( echo ${consoleSize} | cut -f1 -dx )
+		local h=$( echo ${consoleSize} | cut -f2 -dx )
+		let wo=${w}-${xoff}
+		let ho=${h}-${yoff}
+		local nuClip="${wo}x${ho}+${xoff}+${yoff}"
+
+		#echo "${clip} vs ${consoleSize} vs ${nuClip}"
 		if [ "${nuClip}" = "${clip}" ] ; then
 			echo "the clip is still ${clip}" >/dev/null
 		else
