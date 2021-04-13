@@ -73,6 +73,12 @@ _run_clipster() {
 			clip=${nuClip}
 			echo "the clip is now ${clip}"
 			x11vnc -rfbauth /tmp/vnc-password.txt -remote "clip:${clip} " --sync
+			local status=${?}
+			if [ 0 = ${status} ] ; then
+				echo "clipped to ${clip}: ${status}"
+			else
+				echo "could not clip to ${clip}: ${status}"
+			fi
 		fi
 		sleep 1
 	done
